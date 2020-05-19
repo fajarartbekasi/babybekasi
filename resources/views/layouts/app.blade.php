@@ -38,7 +38,16 @@
                                 Master Barang
                             </a>
                         </li>
-
+                         <li class="nav-item">
+                            <a class="nav-link text-white" href="{{route('penjualan.index')}}">
+                                Penjualan
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{route('list-cart')}}">
+                                Cart
+                            </a>
+                        </li>
                     </ul>
 
                     <!-- Right Side Of Navbar -->

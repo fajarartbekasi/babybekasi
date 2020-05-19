@@ -27,4 +27,148 @@ class MasterbarangController extends Controller
         $products = Product::paginate(5);
         return view('content.masterbarang.index', compact('products'));
     }
+    public function create()
+    {
+        return view('content.masterbarang.create');
+
+    }
+    public function store(Request $request)
+    {
+        $products = Product::create([
+            'nama_barang' => $request->nama_barang,
+            'quantity' => $request->quantity,
+            'price' => $request->price,
+        ]);
+
+        flash()->success('data barang berhasil ditambahkan.');
+
+        return redirect()->back();
+    }
+    public function edit($id)
+    {
+        $product = Product::find($id);
+
+        return view('content.masterbarang.edit', compact('product'));
+    }
+    public function update(Request $request, $id)
+    {
+        $product = Product::where('id', $id)->first();
+
+        $product->nama_barang = $request->input('nama_barang');
+        $product->quantity = $request->input('quantity');
+        $product->price = $request->input('price');
+
+        $product->save();
+
+        flash()->success('data barang berhasil di rubah');
+
+        return redirect()->back();
+    }
+    public function addTocart(Request $request)
+    {
+        $this->validate($request, [
+            'product_id' => 'required|exists:products,id',
+            'qty' => 'required|integer'
+        ]);
+
+        $carts = $this->getCarts();
+        if ($carts && array_key_exists($request->product_id, $carts)) {
+            $carts[$request->product_id]['qty'] += $request->qty;
+        } else {
+            $product = Product::find($request->product_id);
+            $carts[$request->product_id] = [
+                'qty' => $request->qty,
+                'product_id' => $product->id,
+                'nama_barang' => $product->nama_barang,
+                'price' => $product->price,
+            ];
+        }
+
+        $cookie = cookie('babybekasi', json_encode($carts), 2880);
+        return redirect()->back()->with(['success' => 'Produk Ditambahkan ke Keranjang'])->cookie($cookie);
+    }
+    public function listcart()
+    {
+        $carts = $this->getCarts();
+        $subtotal = collect($carts)->sum(function($q) {
+            return $q['qty'] * $q['price'];
+        });
+        return view('content.cart.show', compact('carts', 'subtotal'));
+    }
+
+    public function updateCart(Request $request)
+    {
+        $carts = $this->getCarts();
+        foreach ($request->product_id as $key => $row) {
+            if ($request->qty[$key] == 0) {
+                unset($carts[$row]);
+            } else {
+                $carts[$row]['qty'] = $request->qty[$key];
+            }
+        }
+        $cookie = cookie('babybekasi', json_encode($carts), 2880);
+        return redirect()->back()->cookie($cookie);
+    }
+    public function checkout()
+    {
+        $carts = $this->getCarts();
+        $subtotal = collect($carts)->sum(function($q) {
+            return $q['qty'] * $q['price'];
+        });
+        return view('content.cart.checkout.create', compact('carts', 'subtotal'));
+    }
+    public function prosesCheckout(Request $request)
+    {
+        $this->validate($request, [
+            'customer_name' => 'required|string|max:100',
+            'customer_address' => 'required|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $affiliate = json_encode(request()->cookie('babybekasi'), true);
+
+            $explodeAffiliate = explode('-', $affiliate);
+
+            $carts = $this->getCarts();
+            $subtotal = collect($carts)->sum(function($q) {
+                return $q['qty'] * $q['price'];
+            });
+
+            $order = Penjualan::create([
+                'invoice' => Str::random(4) . '-' . time(),
+                'customer_name' => $request->customer_name,
+                'customer_address' => $request->customer_address,
+                'subtotal' => $subtotal,
+            ]);
+
+            foreach ($carts as $row) {
+                $product = Product::find($row['product_id'])->decrement('quantity',$row['qty']);
+
+               OrderDetail::create([
+                    'penjualan_id' => $order->id,
+                    'product_id' => $row['product_id'],
+                    'price' => $row['price'],
+                    'qty' => $row['qty'],
+                ]);
+            }
+
+            DB::commit();
+
+            $carts = [];
+            $cookie = cookie('babybekasi', json_encode($carts), 2880);
+            Cookie::queue(Cookie::forget('babybekasi'));
+
+            return redirect(route('master-barang.checkout', $order->invoice))->cookie($cookie);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with(['error' => $e->getMessage()]);
+        }
+    }
+     public function checkoutFinish($invoice)
+    {
+        $order = Penjualan::where('invoice', $invoice)->first();
+    return view('content.cart.checkout.checkout_finish', compact('order'));
+    }
+
 }
