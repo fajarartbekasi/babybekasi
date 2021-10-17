@@ -10,6 +10,8 @@ use App\Penjualan;
 use App\OrderDetail;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 
 class MasterbarangController extends Controller
 {
@@ -32,15 +34,13 @@ class MasterbarangController extends Controller
         return view('content.masterbarang.create');
 
     }
-    public function store(Request $request)
+    public function store()
     {
-        $products = Product::create([
-            'nama_barang' => $request->nama_barang,
-            'quantity' => $request->quantity,
-            'price' => $request->price,
-        ]);
+       $barang = Product::create($this->validateRequest());
 
-        flash()->success('data barang berhasil ditambahkan.');
+       $this->storeImage($barang);
+
+        flash()->success('file berhasi ditambahkan');
 
         return redirect()->back();
     }
@@ -169,6 +169,32 @@ class MasterbarangController extends Controller
     {
         $order = Penjualan::where('invoice', $invoice)->first();
     return view('content.cart.checkout.checkout_finish', compact('order'));
+    }
+
+    private function validateRequest(){
+        return tap(request()->validate([
+            'nama_barang'   => 'required',
+            'quantity'       => 'required',
+            'price'       => 'required',
+            'image'       => 'required|mimes:jpeg,jpg,png|max:5000',
+        ]), function(){
+            if(request()->hasFile('image')){
+                request()->validate([
+                    'image'    => 'required|mimes:jpeg,jpg,png|max:5000',
+                ]);
+            }
+        });
+    }
+
+    private function storeImage($barang){
+        if(request()->has('image')){
+            $barang->update([
+                'image'  => request()->image->store('uploads','public'),
+            ]);
+
+            $image = Image::make(public_path('storage/'. $barang->image))->fit(300,300, null, 'top-left');
+            $image->save();
+        }
     }
 
 }

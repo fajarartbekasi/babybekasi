@@ -15,7 +15,7 @@
                     <div class="alert alert-primary" role="alert">
                         Silahkan input data produk baru.
                     </div>
-                    <form action="{{route('master-barang.store')}}" method="post">
+                    <form action="{{route('master-barang.store')}}" method="post" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-6">
@@ -34,6 +34,12 @@
                                 <div class="form-group">
                                     <label for="harga">Harga</label>
                                     <input type="number" name="price" class="form-control" placeholder="50000"  id="harga">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="harga">image</label>
+                                    <input type="file" name="image" class="form-control" >
                                 </div>
                             </div>
                             <div class="py-2 px-3">
