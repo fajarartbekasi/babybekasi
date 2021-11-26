@@ -23,6 +23,7 @@ Route::group(['prefix' => 'master-barang'], function(){
     route::post('store', 'MasterbarangController@store')->name('master-barang.store');
     route::get('edit/product/{product}', 'MasterbarangController@edit')->name('master-barang.edit.product');
     route::patch('update/product/{product}', 'MasterbarangController@update')->name('master-barang.update.product');
+    route::delete('delete/{product}', 'MasterbarangController@destroy')->name('master-barang.delete');
 
     route::post('add-cart', 'MasterbarangController@addTocart')->name('master-barang.add-cart');
     route::post('update-cart', 'MasterbarangController@updateCart')->name('master-barang.update-cart');

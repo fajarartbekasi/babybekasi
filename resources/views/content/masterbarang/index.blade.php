@@ -64,7 +64,12 @@
                                     @endif
 
                                     <td>
-                                        <a href="{{route('master-barang.edit.product', $getdata->id)}}" class="btn btn-info"> Edit Product</a>
+                                        <form action="{{route('master-barang.delete',$getdata->id)}}" method="post">
+                                            @csrf
+                                            @method('DELETE')
+                                            <a href="{{route('master-barang.edit.product', $getdata->id)}}" class="btn btn-info"> Edit Product</a>
+                                            <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                        </form>
                                     </td>
                                 </tr>
                             @empty

@@ -196,5 +196,16 @@ class MasterbarangController extends Controller
             $image->save();
         }
     }
+    public function destroy(Product $produck, $id)
+    {
+        $produck = Product::findOrFail($id);
+        $produck->delete();
+
+        if (\File::exists(public_path('storage/' . $produck->image))) {
+            \File::delete(public_path('storage/' . $produck->image));
+        }
+        flash('Produk telah dihapus');
+        return redirect()->back();
+    }
 
 }
